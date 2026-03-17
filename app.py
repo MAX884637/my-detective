@@ -18,8 +18,9 @@ def download_model():
     output = 'gpt_en_pure.pth'
     
     if not os.path.exists(output):
-        with st.spinner("首次啟動：偵探正在從雲端檔案庫搬運 193MB 的模型權重，請稍候約 1 分鐘..."):
-            gdown.download(url, output, quiet=False)
+        with st.spinner("首次啟動：偵探正在從雲端載入 193MB 模型..."):
+            # 加上 fuzzy=True 可以處理 Google Drive 的安全警告頁面
+            gdown.download(url, output, quiet=False, fuzzy=True)
 
 # 執行下載
 download_model()
