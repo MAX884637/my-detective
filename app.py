@@ -149,7 +149,13 @@ st.markdown("""
 @st.cache_resource
 def load_resources():
     PTH = "gpt_en_pure.pth"
-    TXT = r"C:\Users\stan1\OneDrive\Desktop\自然語言學習\PURE_EN_MASTER_DATA.txt"
+    TXT = "PURE_EN_MASTER_DATA.txt"
+
+    # 安全檢查 (Logs 會顯示這行)
+    if not os.path.exists(TXT):
+        st.error(f"找不到數據檔：{TXT}，請確認檔案已上傳至 GitHub。")
+        st.stop()
+        
     with open(TXT, "r", encoding="utf-8") as f: text = f.read()
     pattern = r'([,.::;?_!"()\'\]]|--|\s)'
     tokens = sorted(list(set([t.strip() for t in re.split(pattern, text) if t.strip()])))
