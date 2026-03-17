@@ -10,6 +10,21 @@ from googletrans import Translator
 from gtts import gTTS
 
 # ==========================================
+# 0. 自動下載模型權重 (雲端部署專用)
+# ==========================================
+def download_model():
+    file_id = '1jck8ElL3hQt-B3NIwg-J8CmiqtwRuJTV' 
+    url = f'https://drive.google.com/uc?id={file_id}'
+    output = 'gpt_en_pure.pth'
+    
+    if not os.path.exists(output):
+        with st.spinner("首次啟動：偵探正在從雲端檔案庫搬運 193MB 的模型權重，請稍候約 1 分鐘..."):
+            gdown.download(url, output, quiet=False)
+
+# 執行下載
+download_model()
+
+# ==========================================
 # 1. GPT 模型架構 (確保維度與你的 PTH 匹配)
 # ==========================================
 class LayerNorm(nn.Module):
