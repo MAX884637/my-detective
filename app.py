@@ -217,4 +217,4 @@ if st.session_state['generated_en']:
         st.download_button("💾 儲存故事", f"EN:\n{st.session_state['generated_en']}\n\nZH:\n{st.session_state['generated_zh']}", file_name="ai_story.txt")
 
 st.divider()
-st.caption("J114285102黃政棠 | Final Project | Model Loss: 0.40")
+st.caption("J114285102 黃政棠 | Final Project | Model Loss: 0.40")
