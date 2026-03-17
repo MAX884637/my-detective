@@ -19,15 +19,13 @@ def download_model():
     output = 'gpt_en_pure.pth'
     
     if not os.path.exists(output):
-        with st.spinner("首次啟動：偵探正在從雲端載入 193MB 模型..."):
-            # 加上 fuzzy=True 可以處理 Google Drive 的安全警告頁面
-            gdown.download(url, output, quiet=False, fuzzy=True)
+        with st.spinner("首次啟動：偵探正在從雲端檔案庫搬運 195MB 的模型權重，請稍候約 1 分鐘..."):
+            gdown.download(url, output, quiet=False)
 
-# 執行下載
 download_model()
 
 # ==========================================
-# 1. GPT 模型架構 (確保維度與你的 PTH 匹配)
+# 1. GPT 模型架構
 # ==========================================
 class LayerNorm(nn.Module):
     def __init__(self, emb_dim):
@@ -96,10 +94,9 @@ class GPTModel(nn.Module):
         return self.out_head(self.final_norm(self.trf_blocks(x)))
 
 # ==========================================
-# 2. 輔助功能：美化排版、翻譯、語音
+# 2. 輔助功能
 # ==========================================
 def clean_text(text):
-    # 修正常見 NLP 斷詞空格問題
     replacements = [(" ' ", "'"), (" .", "."), (" ,", ","), (" !", "!"), (" ?", "?"), (" n't", "n't"), (" 's", "'s"), (" 'd", "'d"), (" - ", "-")]
     for old, new in replacements: text = text.replace(old, new)
     return text
@@ -120,29 +117,22 @@ def get_audio_html(text):
     except: return "【系統提示】語音生成失敗。"
 
 # ==========================================
-# 3. 展示頁面介面與推理邏輯 (響應式架構)
+# 3. 展示頁面介面
 # ==========================================
-st.set_page_config(page_title="J114285102黃政棠 自然語言期末專題：偵探故事屋", layout="wide")
+st.set_page_config(page_title="J114285102黃政棠 自然語言期末專題", layout="wide")
 
-# 初始化會話狀態 (Session State) 以保留故事
 if 'generated_en' not in st.session_state: st.session_state['generated_en'] = ""
 if 'generated_zh' not in st.session_state: st.session_state['generated_zh'] = ""
 
-# 自定義 CSS
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
     .stApp { background-color: #f7f3e8; }
-    .main-title { font-family: 'Special Elite', cursive; color: #1a1a1a; text-align: center; font-size: 3rem; margin-bottom: 0; }
-    .sub-title { text-align: center; color: #7f8c8d; font-style: italic; margin-bottom: 2rem; }
-    
-    .paper-box { background-color: white; padding: 40px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Georgia', serif; font-size: 22px; line-height: 1.8; color: #2c3e50; min-height: 300px; background-image: linear-gradient(#f1f1f1 1.1em, transparent 1.1em); background-size: 100% 1.5em; border: 1px solid #dcdcdc; }
-    .paper-zh-box { background-color: #fdfefe; padding: 40px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Microsoft JhengHei', sans-serif; font-size: 20px; line-height: 1.8; color: #34495e; min-height: 250px; border-left: 10px solid #3498db; }
-    
-    .stButton>button { background-color: #2c3e50; color: white; border-radius: 5px; padding: 10px 20px; font-family: 'Georgia'; }
-    .stButton>button:hover { background-color: #1a252f; color: #f1c40f; }
-    
-    .report-header { font-family: ' Special Elite', cursive; color: #16a085; font-size: 1.5rem; }
+    .main-title { font-family: 'Special Elite', cursive; color: #1a1a1a; text-align: center; font-size: 2.5rem; margin-top: 20px; }
+    .sub-title { text-align: center; color: #7f8c8d; font-style: italic; margin-bottom: 20px; }
+    .paper-box { background-color: white; padding: 30px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Georgia', serif; font-size: 20px; line-height: 1.6; color: #2c3e50; border: 1px solid #dcdcdc; margin-bottom: 20px; }
+    .paper-zh-box { background-color: #fdfefe; padding: 30px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Microsoft JhengHei', sans-serif; font-size: 18px; line-height: 1.6; color: #34495e; border-left: 8px solid #3498db; }
+    .report-header { font-family: 'Special Elite', cursive; color: #16a085; font-size: 1.3rem; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -150,12 +140,6 @@ st.markdown("""
 def load_resources():
     PTH = "gpt_en_pure.pth"
     TXT = "PURE_EN_MASTER_DATA.txt"
-
-    # 安全檢查 (Logs 會顯示這行)
-    if not os.path.exists(TXT):
-        st.error(f"找不到數據檔：{TXT}，請確認檔案已上傳至 GitHub。")
-        st.stop()
-        
     with open(TXT, "r", encoding="utf-8") as f: text = f.read()
     pattern = r'([,.::;?_!"()\'\]]|--|\s)'
     tokens = sorted(list(set([t.strip() for t in re.split(pattern, text) if t.strip()])))
@@ -175,24 +159,27 @@ model, vocab, inv_vocab, device = load_resources()
 st.markdown('<h1 class="main-title">Detective Story House</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Powered by Pure English GPT Model (Loss 0.40)</p>', unsafe_allow_html=True)
 
-with st.sidebar:
-    st.header("⚙️ 推理設定")
-    temp = st.slider("創意溫度 (Creativity)", 0.1, 1.2, 0.7)
-    length = st.slider("故事長度 (Tokens)", 50, 400, 150)
-    st.divider()
-    st.markdown("**專題數據：**\n- Text Characters:~7.9萬\n- Vocab Size: ~5.1萬\n- Emb Dim: 384，6層\n- 文風：經典偵探冒險")
-    if st.button("🗑️ 清除當前線索"):
+# --- 行動端優化：將設定移到主頁面摺疊面板 ---
+with st.expander("⚙️ 推理進階設定 (創意溫度、故事長度)"):
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        temp = st.slider("創意溫度 (Creativity)", 0.1, 1.2, 0.7)
+    with col_s2:
+        length = st.slider("故事長度 (Tokens)", 50, 400, 150)
+    
+    st.markdown("**模型狀態：** Vocab Size ~5.1萬 | Emb Dim 384 | 6 Layers")
+    if st.button("🗑️ 清除當前故事線索"):
         st.session_state['generated_en'] = ""
         st.session_state['generated_zh'] = ""
         st.rerun()
 
+# --- 輸入區塊 ---
 prompt = st.text_input("🖋️ 輸入線索 (故事開頭)：", value="The detective noticed a strange shadow near the window...")
 
 if st.button("🚀 啟動偵探推理"):
     pattern = r'([,.::;?_!"()\'\]]|--|\s)'
     ids = [vocab.get(t, vocab["<|unk|>"]) for t in re.split(pattern, prompt) if t.strip()]
     input_tensor = torch.tensor(ids, dtype=torch.long).unsqueeze(0).to(device)
-    
     full_en = prompt
     paper_placeholder = st.empty()
     
@@ -204,42 +191,30 @@ if st.button("🚀 啟動偵探推理"):
             input_tensor = torch.cat((input_tensor, next_id), dim=1)
             token = inv_vocab.get(next_id.item(), "")
             if token == "<|endoftext|>": break
-            
             if token in [".", ",", "!", "?", "'s", "n't"]: full_en += token
             else: full_en += " " + token
+            paper_placeholder.markdown(f'<div class="paper-box">{clean_text(full_en)}▌</div>', unsafe_allow_html=True)
             
-            # 即時打字效果
-            placeholder_text = f'<div class="paper-box">{clean_text(full_en)}▌</div>'
-            paper_placeholder.markdown(placeholder_text, unsafe_allow_html=True)
-            
-    # 存入 Session State
     st.session_state['generated_en'] = clean_text(full_en)
-    
     with st.spinner("🕵️‍♂️ 偵探正在翻譯線索..."):
         st.session_state['generated_zh'] = translate_to_zh(st.session_state['generated_en'])
-    
     st.rerun()
 
-# 顯示區塊 (保留推理內容)
+# --- 顯示區塊 (響應式：手機版會自動轉為上下堆疊) ---
 if st.session_state['generated_en']:
     st.divider()
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1, 1]) # 手機版 1:1 比例在窄螢幕會自動排成上下
     
     with col1:
-        st.markdown('<p class="report-header">📜 英文寫作</p>', unsafe_allow_html=True)
+        st.markdown('<p class="report-header">📜 英文寫作 (Original)</p>', unsafe_allow_html=True)
         st.markdown(f'<div class="paper-box">{st.session_state["generated_en"]}</div>', unsafe_allow_html=True)
-        
-        # 語音按鈕
-        if st.button("🔊 語音朗讀英文稿"):
+        if st.button("🔊 語音朗讀"):
             st.markdown(get_audio_html(st.session_state['generated_en']), unsafe_allow_html=True)
             
     with col2:
-        st.markdown('<p class="report-header">🏮 中文翻譯</p>', unsafe_allow_html=True)
+        st.markdown('<p class="report-header">🏮 中文翻譯 (Analysis)</p>', unsafe_allow_html=True)
         st.markdown(f'<div class="paper-zh-box">{st.session_state["generated_zh"]}</div>', unsafe_allow_html=True)
-        
-        # 下載按鈕
-        story_content = f"English Story:\n{st.session_state['generated_en']}\n\n中文翻譯:\n{st.session_state['generated_zh']}"
-        st.download_button("💾 儲存故事線索 (.txt)", story_content, file_name="ai_detective_story.txt")
+        st.download_button("💾 儲存故事", f"EN:\n{st.session_state['generated_en']}\n\nZH:\n{st.session_state['generated_zh']}", file_name="ai_story.txt")
 
 st.divider()
-st.caption("Final Project Showcase | Pure English GPT Model | Loss 0.40")
+st.caption("J114285102黃政棠 | Final Project | Model Loss: 0.40")
